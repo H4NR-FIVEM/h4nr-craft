@@ -226,10 +226,10 @@ distance = 100
 check(route('start').code == 'too_far', 'Cannot forge distance')
 distance = 0
 bucket = 3
-check(route('start').code == 'too_far', 'Wrong world refused')
+check(route('start').code == 'wrong_instance', 'Wrong world has a distinct refusal even when beside the NPC')
 bucket = 0
 alive = false
-check(route('start').code == 'too_far', 'Dead player refused')
+check(route('start').code == 'player_unavailable', 'Unavailable player is not reported as a distance failure')
 alive = true
 local bad = copy(params)
 bad.amount = 1.5

@@ -7,7 +7,7 @@ function S.Access(src, location, portable)
     end
     local ped = GetPlayerPed(src)
     if ped == 0 or GetEntityHealth(ped) <= 0 then
-        return Craft.Err('too_far')
+        return Craft.Err('player_unavailable')
     end
     if portable then
         if location.Portable == false then
@@ -18,7 +18,10 @@ function S.Access(src, location, portable)
         end
         return Craft.Ok(true)
     end
-    if GetPlayerRoutingBucket(src) ~= 0 or #(GetEntityCoords(ped) - location.Coords) > Config.MaximumDistance then
+    if GetPlayerRoutingBucket(src) ~= 0 then
+        return Craft.Err('wrong_instance')
+    end
+    if #(GetEntityCoords(ped) - location.Coords) > Config.MaximumDistance then
         return Craft.Err('too_far')
     end
     return Craft.Ok(true)

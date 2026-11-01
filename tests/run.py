@@ -40,5 +40,5 @@ files = list(ROOT.rglob('*.lua')) + [
 for path in files:
     run(path)
 print(f'Syntax: {len(files)} Lua files passed', flush=True)
-for name in ('service_spec.lua', 'client_spec.lua', 'rpc_contract_spec.lua', 'interaction_spec.lua'):
+for name in ('service_spec.lua', 'client_spec.lua', 'rpc_contract_spec.lua', 'interaction_spec.lua', 'diagnostics_spec.lua'):
     run(ROOT / 'tests' / name, execute=True)

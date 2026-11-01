@@ -203,3 +203,17 @@ Update Theme and Craft together. For the first deployment, run `restart
 feather-theme` (or `ensure feather-theme` if stopped) before `restart h4nr-craft`.
 Browser regression covers shared font loading, Romanian text, dynamic accent,
 selection/progress/surface updates and contrast for light player accents.
+
+### Workbench access diagnosis (1.1.3)
+
+`too_far` now means a real server distance rejection. A nonzero routing bucket
+reports `wrong_instance`; a missing/dead server ped reports `player_unavailable`.
+The 3.5m server limit and bucket-zero requirement remain enforced. Portable book
+behavior is unchanged. No client coordinate or instance override is accepted.
+
+While the player is beside the NPC, run `craftcheck <server player ID>` in the
+server/txAdmin console (or `craftcheck` for all connected players). The read-only
+command reports the closest station, actual server distance/limit, current and
+required bucket, health and both coordinate sets. Players cannot execute it.
+This separates a stale server/config position from a different routing instance
+without widening admission or moving a player into another resource's route.

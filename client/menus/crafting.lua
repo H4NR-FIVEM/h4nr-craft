@@ -92,6 +92,8 @@ local function start(params)
         low_level = true,
         queue_full = true,
         too_far = true,
+        wrong_instance = true,
+        player_unavailable = true,
         book_required = true,
         recipe_book_required = true,
         workshop_required = true,
