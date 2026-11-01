@@ -10,6 +10,9 @@ function S.Access(src, location, portable)
         return Craft.Err('too_far')
     end
     if portable then
+        if location.Portable == false then
+            return Craft.Err('workshop_required')
+        end
         if not Config.AllowPortableBooks or F.Count(src, location.Book) < 1 then
             return Craft.Err('book_required')
         end
@@ -53,6 +56,9 @@ function S.Prepare(src, who, recipe, amount, orderId)
     if not recipe.Weapon and definition.instance_mode ~= 'stack' then
         return Craft.Err('missing_definition')
     end
+    if recipe.Book and F.Count(src, recipe.Book) < 1 then
+        return Craft.Err('recipe_book_required')
+    end
     if not F.Job(who.characterId, recipe.Jobs) then
         return Craft.Err('wrong_job')
     end
@@ -63,6 +69,7 @@ function S.Prepare(src, who, recipe, amount, orderId)
         return Craft.Err('no_space')
     end
     local snapshot = {
+        Portable = recipe.Portable == true,
         Batches = amount,
         Recipe = recipe.Id,
         Item = recipe.Item,
@@ -75,6 +82,13 @@ function S.Prepare(src, who, recipe, amount, orderId)
         Materials = {},
         Wear = {},
     }
+    if
+        tonumber(definition.max_quantity)
+        and tonumber(definition.max_quantity) > 0
+        and snapshot.Amount > tonumber(definition.max_quantity)
+    then
+        return Craft.Err('output_limit')
+    end
     if not Craft.Integer(snapshot.Amount, 1, 100) then
         return Craft.Err('bad_request')
     end
@@ -120,7 +134,7 @@ function S.Prepare(src, who, recipe, amount, orderId)
             then
                 return Craft.Err('missing_definition')
             end
-            local wear = math.max(1, math.ceil(tool.Wear / tool.Maximum * 100)) * amount
+            local wear = Craft.ToolWear(tool, amount)
             if (tonumber(item.metadata and item.metadata.condition) or 100) < wear or wear > 100 then
                 return Craft.Err('missing_materials')
             end
@@ -150,6 +164,9 @@ function S.Start(src, who, params)
     end
     local previous = D.Request(who.characterId, params.requestId)
     if previous then
+        if params.portable and previous.snapshot.Portable ~= true then
+            return Craft.Err('workshop_required')
+        end
         if
             previous.location_id ~= params.location
             or previous.snapshot.Recipe ~= params.recipe
@@ -174,6 +191,9 @@ function S.Start(src, who, params)
     if not recipe then
         return Craft.Err('bad_request')
     end
+    if params.portable and recipe.Portable ~= true then
+        return Craft.Err('workshop_required')
+    end
     local id = D.Uuid()
     local prepared = S.Prepare(src, who, recipe, params.amount, id)
     if not prepared.ok then
@@ -197,6 +217,9 @@ function S.Collect(src, who, params)
     if not order then
         return Craft.Err('bad_request')
     end
+    if params.portable and order.snapshot.Portable ~= true then
+        return Craft.Err('workshop_required')
+    end
     if order.state == 'collected' then
         return Craft.Ok(true)
     end
@@ -217,10 +240,77 @@ function S.Collect(src, who, params)
     return Craft.Ok(true)
 end
 function S.Catalog(src, who, params)
-    local recipes = {}
+    local recipes, inventory = {}, {}
+    local definitions = F.Definitions()
+    local stock = F.Stock(who.characterId)
+    if not stock.ok then
+        return stock
+    end
+    local wearContract = F.WearContract()
+    local function inventoryRow(name)
+        if inventory[name] then
+            return inventory[name]
+        end
+        local definition = definitions[name]
+        local held = stock.value.inventory[name] or {}
+        local row = {
+            count = held.count or 0,
+            plain = held.plain or 0,
+            condition = held.condition or 0,
+            label = Config.DefaultLang == 'ro' and (Config.ItemLabels or {})[name]
+                or (definition and definition.display_name or name),
+            image = F.Image(name),
+        }
+        inventory[name] = row
+        return row
+    end
     for _, recipe in ipairs(Craft.Recipes) do
         if recipe.Location == params.location then
-            recipes[#recipes + 1] = recipe
+            local copy = {}
+            for key, value in pairs(recipe) do
+                copy[key] = value
+            end
+            local definition = definitions[recipe.Item]
+            copy.Description = definition and definition.description or ''
+            copy.Image = F.Image(recipe.Item)
+            local limit = tonumber(definition and definition.max_quantity)
+            copy.MaxBatch = math.min(
+                Config.MaxBatch,
+                math.floor(100 / recipe.Amount),
+                limit and limit > 0 and math.floor(limit / recipe.Amount) or Config.MaxBatch
+            )
+            copy.DefinitionReady = definition ~= nil and (recipe.Weapon ~= nil or definition.instance_mode == 'stack')
+            copy.JobAllowed = F.Job(who.characterId, recipe.Jobs)
+            if recipe.Book then
+                inventoryRow(recipe.Book)
+            end
+            for _, material in ipairs(recipe.Materials) do
+                local materialDefinition = definitions[material.Item]
+                if not materialDefinition or materialDefinition.instance_mode ~= 'stack' then
+                    copy.DefinitionReady = false
+                end
+                inventoryRow(material.Item)
+            end
+            for _, tool in ipairs(recipe.Tools) do
+                inventoryRow(tool.Item)
+                local toolDefinition = definitions[tool.Item]
+                if not toolDefinition then
+                    copy.DefinitionReady = false
+                end
+                if tool.Wear > 0 then
+                    if
+                        not toolDefinition
+                        or toolDefinition.type ~= 'item_item'
+                        or wearContract.ready ~= true
+                        or wearContract.durableWear ~= 1
+                        or wearContract.conditionKey ~= 'condition'
+                        or wearContract.conditionMaximum ~= 100
+                    then
+                        copy.DefinitionReady = false
+                    end
+                end
+            end
+            recipes[#recipes + 1] = copy
         end
     end
     local orders = D.List(who.characterId)
@@ -235,6 +325,9 @@ function S.Catalog(src, who, params)
                 batches = order.snapshot.Batches,
                 label = order.snapshot.Label,
                 amount = order.snapshot.Amount,
+                duration = order.snapshot.Seconds,
+                portable = order.snapshot.Portable == true,
+                image = F.Image(order.snapshot.Item),
                 remaining = math.max(0, tonumber(order.ready_at) - os.time()),
             }
         end
@@ -245,16 +338,28 @@ function S.Catalog(src, who, params)
         sessionId = who.sessionId,
         recipes = recipes,
         queue = queue,
+        queueCount = #orders,
+        maxQueue = Config.MaxQueue,
+        inventory = inventory,
+        weaponCount = stock.value.weapons,
+        maxWeapons = Config.MaxWeapons,
         xp = xp,
         level = Craft.Level(xp),
+        xpStep = Config.XpPerLevel,
+        maxLevel = Config.MaxLevel,
         maxBatch = Config.MaxBatch,
+        maxMaterialUnits = Config.MaxMaterialUnits,
     })
 end
+
 function S.Book(src, who, params)
     if not Config.HasCraftBooks or params.portable then
         return Craft.Err('bad_request')
     end
     local location = Craft.Location(params.location)
+    if not location.Book then
+        return Craft.Err('bad_request')
+    end
     if F.Count(src, location.Book) > 0 then
         return Craft.Ok(true)
     end

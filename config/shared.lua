@@ -2,7 +2,7 @@
 Config = {
     DefaultLang = 'ro',
     Debug = false,
-    HasCraftBooks = false, -- Offer free reference books at the benches.
+    HasCraftBooks = true, -- Offer free reference books at the benches.
     AllowPortableBooks = true, -- Holding a book authorizes its recipes away from a bench.
     Locations = {
         {
@@ -17,6 +17,7 @@ Config = {
         },
         {
             Id = 'refinery',
+            Portable = false,
             Label = 'Atelier',
             Coords = vector3(472.6, -1310.4, 29.2),
             Heading = 110.0,
@@ -37,6 +38,7 @@ Config = {
         },
         {
             Id = 'weapons',
+            Portable = false,
             Label = 'Atelier arme',
             Coords = vector3(809.1, -2159.0, 29.62),
             Heading = 355.0,
@@ -47,6 +49,7 @@ Config = {
         },
         {
             Id = 'ammunitions',
+            Portable = false,
             Label = 'Atelier muniție',
             Coords = vector3(845.5, -1030.1, 28.2),
             Heading = 180.0,
@@ -54,6 +57,27 @@ Config = {
             Color = 3,
             Model = 's_m_y_ammucity_01',
             Book = 'ammo_craftbook',
+        },
+        -- Coordinates from ox_inventory/data/crafting.lua; verify placement against custom maps.
+        {
+            Id = 'workshop_industrial',
+            Label = 'Atelier industrial',
+            Portable = false,
+            Coords = vector3(-1147.083008, -2002.662109, 13.180260),
+            Heading = 315.0,
+            Sprite = 566,
+            Color = 3,
+            Model = 's_m_y_construct_01',
+        },
+        {
+            Id = 'workshop_central',
+            Label = 'Atelier central',
+            Portable = false,
+            Coords = vector3(-345.374969, -130.687088, 39.009613),
+            Heading = 70.0,
+            Sprite = 566,
+            Color = 3,
+            Model = 's_m_y_construct_01',
         },
     },
 }

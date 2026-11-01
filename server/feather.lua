@@ -145,7 +145,7 @@ function F.Grant(order)
 end
 function F.RegisterBooks()
     for _, location in ipairs(Config.Locations) do
-        if F.Definitions()[location.Book] then
+        if location.Book and F.Definitions()[location.Book] then
             local result = api.Items.RegisterUsableItem(location.Book, function(_, src)
                 api.Inventory.CloseInventory(src)
                 TriggerClientEvent('h4nr-craft:client:book', src, location.Id)
@@ -166,4 +166,46 @@ function F.RegisterRpc(name, handler)
         maxDepth = 2,
         maxNodes = 20,
     })
+end
+
+local imageCache = {}
+function F.Image(itemName)
+    if imageCache[itemName] then
+        return imageCache[itemName]
+    end
+    local path = 'ui/images/items/' .. ((Config.ItemImages or {})[itemName] or itemName) .. '.png'
+    local image = LoadResourceFile('feather-inventory', path)
+    imageCache[itemName] = image and ('https://cfx-nui-feather-inventory/' .. path)
+        or 'https://cfx-nui-h4nr-craft/web/workbench.svg'
+    return imageCache[itemName]
+end
+
+-- One owner read per catalog rather than a count query for every ingredient/recipe.
+function F.Stock(characterId)
+    local header = F.Call('feather-inventory', 'GetCharacterInventory', characterId)
+    if not header.ok then
+        return header
+    end
+    local result = api.Inventory.GetInventoryItems(header.value.id)
+    if not result or not result.ok then
+        return Craft.Err('unavailable')
+    end
+    local inventory, weapons = {}, 0
+    for _, item in ipairs(result.value) do
+        local row = inventory[item.name] or { count = 0, plain = 0 }
+        local metadata = type(item.metadata) == 'table' and item.metadata or {}
+        row.count = row.count + 1
+        if next(metadata) == nil then
+            row.plain = row.plain + 1
+        end
+        if not row.firstId or tonumber(item.id) < row.firstId then
+            row.firstId = tonumber(item.id)
+            row.condition = tonumber(metadata.condition) or 100
+        end
+        inventory[item.name] = row
+        if item.name:sub(1, 7) == 'weapon_' then
+            weapons = weapons + 1
+        end
+    end
+    return Craft.Ok({ inventory = inventory, weapons = weapons })
 end

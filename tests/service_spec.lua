@@ -20,7 +20,7 @@ dofile('languages/ro.lua')
 dofile('languages/en_us.lua')
 dofile('locale.lua')
 dofile('shared/utils.lua')
-for _, name in ipairs({ 'food', 'refinery', 'tobacco', 'weapons', 'ammunitions' }) do
+for _, name in ipairs({ 'food', 'refinery', 'tobacco', 'weapons', 'ammunitions', 'workshop' }) do
     dofile('config/recipes_' .. name .. '.lua')
 end
 for key in pairs(Locales.ro) do
@@ -138,6 +138,16 @@ Craft.Feather = {
     end,
     Current = function()
         return active
+    end,
+    Image = function(name)
+        return 'https://cfx-nui-h4nr-craft/web/workbench.svg'
+    end,
+    Stock = function()
+        local inventory = {}
+        for name, count in pairs(stock) do
+            inventory[name] = { count = count, plain = count, condition = 100 }
+        end
+        return Craft.Ok({ inventory = inventory, weapons = 0 })
     end,
     Definitions = function()
         return definitions
@@ -322,6 +332,52 @@ check(route('catalog', badScope).code == 'session_expired', 'Stale same-characte
 badScope = copy(params)
 badScope.portable = 'yes'
 check(route('catalog', badScope).code == 'bad_request', 'Portable scope must be boolean')
+local outputDefinition = definitions[recipe.Item]
+outputDefinition.max_quantity = 1
+check(
+    Craft.Service.Prepare(1, who, recipe, 2, Craft.Db.Uuid()).code == 'output_limit',
+    'Impossible-to-collect batches are refused against the Inventory item limit'
+)
+outputDefinition.max_quantity = nil
+-- Fixed workshops and knowledge books are enforced before any debit, even for forged portable requests.
+local advanced = copy(recipe)
+advanced.Id, advanced.Book, advanced.Portable = 'food.advanced-test', 'food_craftbook', false
+Craft.Recipes[#Craft.Recipes + 1] = advanced
+local gated = copy(params)
+gated.recipe, gated.requestId, gated.amount, gated.portable = advanced.Id, 'advanced-gated', 1, true
+local beforeTake = takeCount
+check(
+    route('start', gated).code == 'workshop_required' and takeCount == beforeTake,
+    'Advanced recipes cannot be made portable by a client flag'
+)
+gated.portable = false
+stock.food_craftbook = 0
+check(
+    route('start', gated).code == 'recipe_book_required' and takeCount == beforeTake,
+    'Knowledge book required before materials are consumed'
+)
+stock.food_craftbook = 1
+check(
+    Craft.Service.Prepare(1, who, advanced, 1, Craft.Db.Uuid()).ok,
+    'Holding book satisfies knowledge requirement at workshop'
+)
+check(
+    Craft.Service.Access(1, Craft.Location('weapons'), true).code == 'workshop_required',
+    'Weapons book cannot bypass workshop requirement'
+)
+check(
+    Craft.Service.Access(1, Craft.Location('ammunitions'), true).code == 'workshop_required',
+    'Ammunition needs workshop'
+)
+local preview = route('catalog')
+check(
+    preview.ok and preview.value.inventory.meat.count == stock.meat and preview.value.maxQueue == Config.MaxQueue,
+    'Catalog carries owned stock and queue limits'
+)
+check(
+    preview.value.recipes[1].JobAllowed == true and preview.value.recipes[1].Image ~= nil,
+    'Catalog carries authoritative job eligibility and item image'
+)
 active = false
 check(route('catalog').code == 'session_expired', 'Missing active session refused')
 active = true

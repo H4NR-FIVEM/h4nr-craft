@@ -1,11 +1,12 @@
--- Client boundary for RPC, sessions, Menu v2, notifications and Toolkit-owned entities.
+-- Client boundary for RPC, sessions, NUI, notifications and Toolkit-owned entities.
 Craft.Ui = {}
 local U = Craft.Ui
-local menu = exports['feather-menu-v2']
 local toolkit = exports['feather-toolkit']
 function U.Session()
-    local result = exports['feather-core']:GetSessionContext()
-    return result and result.ok and result.value or nil
+    local called, result = pcall(function()
+        return exports['feather-core']:GetSessionContext()
+    end)
+    return called and result and result.ok and result.value or nil
 end
 function U.Rpc(action, params)
     local result = exports['feather-core']:CallRPCAsync(Craft.Route(action), params, nil, 30000)
@@ -16,11 +17,20 @@ function U.Notify(key)
     if message == key then
         message = _U('unavailable')
     end
+    U.Send({
+        action = 'notice',
+        message = message,
+        success = key == 'started' or key == 'collected' or key == 'bookReceived',
+    })
     exports['feather-notify']:ShowNotification({ style = 'right', message = message, duration = 5000 })
-end
-function U.Menu(operation, ...)
-    return menu[operation](menu, ...)
 end
 function U.Toolkit(operation, ...)
     return toolkit[operation](toolkit, ...)
+end
+
+function U.Focus(enabled)
+    SetNuiFocus(enabled, enabled)
+end
+function U.Send(message)
+    SendNUIMessage(message)
 end

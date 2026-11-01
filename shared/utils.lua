@@ -22,3 +22,10 @@ end
 function Craft.Level(xp)
     return math.min(Config.MaxLevel, 1 + math.floor(xp / Config.XpPerLevel))
 end
+
+function Craft.ToolWear(tool, batches)
+    if tool.Wear <= 0 then
+        return 0
+    end
+    return math.max(1, math.ceil(tool.Wear / tool.Maximum * 100)) * batches
+end

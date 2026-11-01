@@ -19,7 +19,6 @@ ensure feather-core
 ensure feather-character
 ensure feather-notify
 ensure feather-toolkit
-ensure feather-menu-v2
 ensure feather-inventory
 ensure feather-weapons
 ensure feather-organizations
@@ -51,3 +50,14 @@ owning Feather domain; do not turn missing-definition errors into free output.
 
 Never commit the live `server.cfg`: it contains secrets. Only the sanitized
 server repository example is versioned.
+
+## Dedicated NUI update (1.1.0)
+
+The resource ships plain HTML/CSS/JS. Deploy web/ with the Lua files and restart
+only h4nr-craft. Menu v2 is no longer a dependency; keep it running for its other
+consumers. No Inventory restart is needed when updating an installed 1.0.x Craft.
+
+Books are offered free at each bench by default. Advanced recipes require their
+configured book, and weapons/ammunition/refining require a fixed workshop. Only
+explicitly portable recipes can be made in the field. Existing orders without
+the new Portable snapshot flag remain collectible at a bench.

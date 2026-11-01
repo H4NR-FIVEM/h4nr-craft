@@ -25,7 +25,13 @@ CreateThread(function()
     while true do
         local sleep = 750
         local coords = GetEntityCoords(PlayerPedId())
-        if not IsEntityDead(PlayerPedId()) then
+        if Craft.Board.Active() then
+            sleep = 0 -- NUI ownership and gameplay suppression must be renewed each rendered frame.
+            DisableAllControlActions(0)
+            DisableAllControlActions(1)
+            DisableAllControlActions(2)
+            DisablePlayerFiring(PlayerId(), true)
+        elseif not IsEntityDead(PlayerPedId()) then
             for _, location in ipairs(Config.Locations) do
                 if #(coords - location.Coords) < Config.PromptDistance then
                     sleep = 0 -- Toolkit prompt completion is tied to the frame showing this group.
@@ -83,7 +89,7 @@ RegisterNetEvent('h4nr-craft:client:book', function(id)
     end
 end)
 AddEventHandler('onResourceStop', function(resource)
-    if resource == 'feather-menu-v2' or resource == 'feather-core' then
+    if resource == 'feather-core' then
         Craft.Menu.Close()
     end
     if resource ~= GetCurrentResourceName() then

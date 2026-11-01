@@ -4,3 +4,5 @@ Config.PromptDistance = 2.0 -- metres
 Config.SpawnDistance = 65.0 -- metres; NPCs stream near each station.
 Config.ShowBlips = true
 Config.ShowNpcs = true
+
+Config.CatalogRefreshMs = 10000 -- refresh authoritative inventory/job requirements while open

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>H4NR Craft</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main id="app" class="workbench" hidden role="dialog" aria-modal="true" aria-labelledby="station-name">
+    <header class="topbar">
+      <div class="brand-icon" aria-hidden="true"><svg width="29" height="29" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 25 12-12m-7-5 12 12M6 4l5 1 2 5-4 4-5-2-1-5 4 3 3-3zM23 19l5 5-4 4-5-5"/></svg></div>
+      <div class="brand-copy"><span class="eyebrow">H4NR / CRAFT</span><h1 id="station-name"></h1><p id="station-mode"></p></div>
+      <div class="level-card"><span id="level-label"></span><div class="xp-track"><i id="xp-fill"></i></div><small id="xp-label"></small></div>
+      <button id="refresh" class="icon-button" type="button" aria-label="Actualizează">↻</button>
+      <button id="close" class="icon-button" type="button" aria-label="Închide">×</button>
+    </header>
+    <div class="workspace">
+      <aside class="browser pane" aria-labelledby="recipes-label">
+        <div class="search-wrap"><span aria-hidden="true">⌕</span><input id="search" type="search" maxlength="80" autocomplete="off" placeholder="Caută un obiect"></div>
+        <div class="section-bar"><span id="recipes-label"></span><small id="recipe-count"></small></div>
+        <div id="recipe-list" class="recipe-list"></div>
+        <button id="book" class="secondary-button" type="button"></button>
+      </aside>
+      <section class="detail pane" aria-labelledby="recipe-name">
+        <div class="item-hero"><div class="item-art"><img id="item-image" src="workbench.svg" alt=""></div><div class="hero-copy"><span class="eyebrow" id="output-label"></span><h2 id="recipe-name"></h2><p id="recipe-description"></p><div class="tags"><span id="required-level"></span><span id="recipe-category"></span></div></div></div>
+        <div class="detail-scroll">
+          <div class="section-bar"><span id="materials-label"></span><small id="material-count"></small></div>
+          <div id="materials" class="ingredient-grid"></div>
+          <div class="section-bar"><span id="tools-label"></span></div>
+          <div id="tools" class="tool-list"></div>
+          <div id="requirements" class="requirements"></div>
+        </div>
+        <footer class="craft-footer">
+          <div id="notice" class="notice" role="status" aria-live="polite"></div>
+          <div id="eligibility" class="eligibility"></div>
+          <div class="quantity-row"><div class="quantity-control"><button id="minus" type="button" aria-label="Mai puține">−</button><label><span id="amount-label"></span><input id="amount" type="number" min="1" max="10" step="1" value="1" inputmode="numeric"></label><button id="plus" type="button" aria-label="Mai multe">+</button></div><div class="craft-metrics"><span id="duration"></span><span id="xp-reward"></span></div></div>
+          <div id="output-summary" class="output-summary"></div>
+          <button id="craft" class="primary-button" type="button"></button>
+        </footer>
+      </section>
+      <aside class="inventory pane" aria-labelledby="inventory-label">
+        <div class="section-bar"><span id="inventory-label"></span><small id="inventory-count"></small></div>
+        <div id="inventory-list" class="inventory-list"></div>
+        <div class="queue-heading"><h3 id="queue-label"></h3><small id="queue-count"></small></div>
+        <div id="queue" class="queue-list"></div>
+        <div id="pending-box" class="pending-box" hidden><p id="pending-message"></p><button id="retry" class="secondary-button" type="button"></button></div>
+      </aside>
+    </div>
+    <div id="busy" class="busy" hidden role="status"><i></i><span>…</span></div>
+  </main>
+</body>
+</html>

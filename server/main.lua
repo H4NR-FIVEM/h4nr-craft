@@ -48,7 +48,7 @@ RegisterCommand('CraftReleaseSmokeTest', function(src)
         end
     end
     for _, location in ipairs(Config.Locations) do
-        if not definitions[location.Book] then
+        if location.Book and not definitions[location.Book] then
             missing[location.Book] = true
         end
     end

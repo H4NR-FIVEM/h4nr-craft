@@ -1,10 +1,11 @@
 # h4nr-craft
 
-FiveM crafting for the local Feather Framework: 26 recipes at five Los Santos
+FiveM crafting for the local Feather Framework: 32 station recipes at seven Los Santos
 stations, batches, persistent crafting queues, collectible output, tools and wear,
 recipe job/grade/duty restrictions, levels, and optional portable inventory books.
-Romanian is the default; all interface messages have an English fallback. Menus
-use feather-menu-v2's blue `modern` preset.
+Romanian is the default; all interface messages have an English fallback.
+The dedicated NUI uses the blue Neon Vice palette and does not require Menu v2.
+[Workbench preview](docs/workbench-preview.png).
 
 Ported from [BCC-FeatherFramework/bcc-craft](https://github.com/BCC-FeatherFramework/bcc-craft)
 at `f1d5dc1`. Original author: BCC Team / iseeyoucopy. GPL-3.0; see LICENSE.
@@ -20,8 +21,9 @@ queries another resource's tables.
 
 Walk to a station and press **E**. Select a recipe and number of batches, then
 start crafting. The server begins the timer after material preparation succeeds.
-Open **Comenzi în lucru / colectare** to inspect or collect orders. Refresh the
-queue when a timer expires. A full inventory leaves the order available to retry.
+The right panel shows queued orders with live countdowns and Collect/Resume
+actions. Quantity controls update output, materials, duration and XP immediately.
+Search and expandable categories filter the left recipe list. A full inventory leaves the order available to retry.
 
 ## Configuration
 
@@ -47,10 +49,11 @@ per box (currently 24). Weapons are issued through `feather-weapons:IssueWeapon`
 with durable request IDs, serial metadata and zero initial rounds. Craft never
 calls `GiveWeaponToPed` or writes weapon/ammunition state.
 
-With `HasCraftBooks = true`, each station offers one free reference copy per
-character/station. With `AllowPortableBooks = true`, using a book opens its
-station's recipes away from a bench. The server checks book possession for
-portable requests. Books are actual Inventory items and are not consumed.
+With `HasCraftBooks = true` (the default), each station offers one free reference
+copy per character/station. A recipe with `Book` requires that inventory item.
+Only recipes explicitly marked `Portable = true` can be made in the field, and
+the location must permit portable access. Weapons, ammunition and refining
+require a fixed workshop. The server enforces both book and station requirements. Books are actual Inventory items and are not consumed.
 
 ## Queue and recovery
 
@@ -95,14 +98,26 @@ python3 tests/run.py
 python3 tests/mysql_integration.py
 ```
 
-Lua 5.4 syntax and simulated service/client contracts: **27 files (including three companion configs), 203 service
-assertions and 111 client assertions**. The RPC regression suite additionally passes
-**44 assertions** using the actual Feather Core registration and dispatch code,
-including all four versioned routes, error responses and resource-stop cleanup.
-The isolated MariaDB installer/queue suite passes **99 checks**, preserves
-existing definitions, rejects duplicate request identities, and tests retained
-server deadlines and collected XP. It starts and stops its own temporary database;
-it never connects to the game database. Requires local MariaDB binaries.
+Lua 5.4 verification: **30 files parse, 335 service assertions, 40 NUI/controller
+assertions and 44 actual Core RPC assertions pass**. The browser suite passes
+**31 checks** using a synthetic payload emitted by the actual Lua controller.
+It covers layout, search, selection, quantity/material/time totals, scoped actions,
+selection preservation, countdowns, blocking reasons, images, 720p/narrow layouts
+and Escape close.
+
+```sh
+CRAFT_PREVIEW_OUT=/tmp/h4nr-craft-workbench-view.json python3 tests/run.py
+node tests/browser_spec.mjs /tmp/h4nr-craft-workbench-view.json
+```
+
+The browser suite needs Playwright and Chromium. Set `CRAFT_PLAYWRIGHT_MODULE`
+to an installed module path and `CRAFT_BROWSER_EXECUTABLE` to a browser executable
+when they are not in standard locations. `CRAFT_SCREENSHOT_OUT` sets the screenshot
+path. The test serves only the four NUI files locally, uses synthetic data and
+stops its server after the run. No game database or production player is involved.
+
+The earlier isolated MariaDB installer/queue checkpoint passed **99 checks**.
+No SQL/schema change is needed for this NUI release.
 
 `CraftReleaseSmokeTest` is a read-only server-console command reporting readiness
 and missing recipe/tool/book definitions. It does not grant test items.
@@ -119,3 +134,37 @@ Contract RPC names now use a shared `.v1` suffix on both client and server.
 Craft error responses include the localized `message` required by Core's result
 contract. Registration failures report Core's error code and message. Deploy
 both sides together with `restart h4nr-craft`; no Inventory restart is needed.
+
+## 1.1.0 — dedicated workbench NUI
+
+The owner selected a dedicated interface following the supplied three-column
+reference, overriding the earlier Menu v2 presentation rule for this resource.
+The left panel groups/searches recipes, the center shows item art, materials,
+tools, knowledge and quantity totals, and the right shows owned materials and
+the persistent queue. Green marks collectible/available output; amber marks unmet
+requirements. Presentation refreshes every ten seconds without resetting selection
+or quantity; countdowns update locally each second. Server admission revalidates.
+
+Inventory remains the owner: catalogs use one inventory snapshot rather than a
+count query for every recipe/material. No new Inventory contract or permission is
+required. NUI actions are bound to the current UI nonce and Core session. Close,
+death, distance, Core stop and resource stop release focus; gameplay controls are
+suppressed while the NUI holds focus. ItemImages/ItemLabels in config/server.lua
+can alias existing Inventory assets/labels without changing item definitions.
+
+Deploy all files and run `restart h4nr-craft`. Do not restart Inventory for this
+update. Confirm layout, focus and controller handling in FiveM; browser tests do
+not replace in-game acceptance. No UI package install or build step is needed.
+
+## Sourced workshops and recipe research
+
+Two additional fixed workshops use the default points from ox_inventory. Each
+offers adapted lockpick, screwdriver-set and repair-kit recipes using items that
+already exist in Feather Inventory. This adds six station entries (three recipe
+types); item definitions and third-party resources are unchanged. Costs and XP
+are our adaptation, not the original upstream balance.
+
+[Locations, recipes, sources and additional candidates](docs/recipe_sources.md)
+records the ox/QB/Jim references, exact installed coordinates, and candidate foundry,
+gem-cutting and jewelry locations. Mining/smelting is retained with h4nr-mining.
+New item/weapon mechanics are not enabled just because a third-party recipe names them.
