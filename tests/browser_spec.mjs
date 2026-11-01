@@ -22,8 +22,9 @@ page.on('pageerror',e=>errors.push(e.message));
 await page.addInitScript(()=>{window.GetParentResourceName=()=> 'h4nr-craft';});
 await page.route(/^https:\/\/cfx-nui-/,async route=>{
  const url=new URL(route.request().url());
- const base=url.hostname==='cfx-nui-feather-inventory'?root+'/[feather]/feather-inventory':root+'/[h4nr]/h4nr-craft';
- try {await route.fulfill({body:await readFile(base+url.pathname),contentType:url.pathname.endsWith('.svg')?'image/svg+xml':'image/png'});}
+ const bases={'cfx-nui-feather-inventory':root+'/[feather]/feather-inventory','cfx-nui-feather-theme':root+'/[feather]/feather-theme'};
+ const base=bases[url.hostname] || resource;
+ try {await route.fulfill({body:await readFile(base+url.pathname),contentType:({'.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.svg':'image/svg+xml'})[path.extname(url.pathname)] || 'image/png'});}
  catch(error) {console.log('Preview asset unavailable:',base+url.pathname,error.code);await route.fulfill({status:404,body:''});}
 });
 await page.route('https://h4nr-craft/*',async route=>{actions.push({action:new URL(route.request().url()).pathname.slice(1),body:route.request().postDataJSON()});await route.fulfill({contentType:'application/json',body:'{"ok":true}'});});
@@ -35,6 +36,21 @@ try {
  check(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor==='rgba(0, 0, 0, 0)'&&getComputedStyle(document.documentElement).colorScheme!=='dark'),'Page canvas stays transparent around the NUI');
  await send(fixture);
  check(await page.locator('#app').isVisible(),'Workbench opens from actual Lua payload');
+ await page.evaluate(()=>document.fonts.ready);
+ check(await page.locator('#app').evaluate(el=>getComputedStyle(el).fontFamily.startsWith('Barlow')),'Craft uses the shared Inventory body font');
+ check(await page.locator('h1').evaluate(el=>getComputedStyle(el).fontFamily.includes('Chakra Petch')),'Craft uses the shared Menu/Inventory display font');
+ check(await page.evaluate(()=>[...document.fonts].some(f=>f.family==='Barlow'&&f.status==='loaded')&&[...document.fonts].some(f=>f.family==='Chakra Petch'&&f.status==='loaded')),'Shared bundled fonts actually load, including Romanian text');
+ check(await page.locator('#craft').evaluate(el=>getComputedStyle(el).backgroundColor==='rgb(61, 139, 255)'),'Initial accent follows shared Neon Vice blue');
+ await send({type:'feather-theme:state',state:{palette:{accent:'#ff3d9a',accent2:'#29d3ff',background:'#121321',text:'#f9faff',muted:'#aabbd1',warning:'#ffd23d'}}});
+ await page.waitForFunction(()=>getComputedStyle(document.querySelector('#craft')).backgroundColor==='rgb(255, 61, 154)');
+ check(await page.locator('#craft').evaluate(el=>getComputedStyle(el).backgroundColor==='rgb(255, 61, 154)'&&getComputedStyle(el).color==='rgb(255, 255, 255)'),'Live player accent recolors Craft with readable button text');
+ check(await page.locator('.recipe-button.selected').evaluate(el=>getComputedStyle(el).backgroundColor==='rgba(255, 61, 154, 0.14)'),'Selected recipe tint follows the live accent');
+ check(await page.locator('#xp-fill').evaluate(el=>getComputedStyle(el).backgroundColor==='rgb(255, 61, 154)'),'Progress follows the live accent');
+ check(await page.locator('#app').evaluate(el=>getComputedStyle(el).backgroundImage.includes('rgb(18, 19, 33)')&&getComputedStyle(el).color==='rgb(249, 250, 255)'),'Workbench surface and text follow the server palette');
+ check(await page.locator('.stock-count').first().evaluate(el=>getComputedStyle(el).color==='rgb(41, 211, 255)'),'Secondary palette follows live theme state');
+ await send({type:'feather-theme:state',state:{palette:{accent:'#ffd23d'}}});
+ check(await page.locator('#craft').evaluate(el=>getComputedStyle(el).color==='rgb(6, 16, 31)'),'Light accents switch primary button text for contrast');
+ await send({type:'feather-theme:state',state:{palette:{}}});
  check(await page.locator('#search').evaluate(el=>document.activeElement===el),'Opening moves focus into search');
  await page.locator('.queue-action').filter({hasText:fixture.messages.collect}).first().focus();
  await page.keyboard.press('Tab');

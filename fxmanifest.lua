@@ -4,7 +4,7 @@ lua54 'yes'
 name 'h4nr-craft'
 author 'BCC Team, BCC-FeatherFramework, h4nr'
 description 'Inventory-backed crafting queues, books and levels for Feather FiveM'
-version '1.1.1'
+version '1.1.2'
 shared_scripts {
     'config/shared.lua',
     'languages/ro.lua',
@@ -20,6 +20,7 @@ shared_scripts {
     'config/recipes_workshop.lua',
 }
 client_scripts {
+    '@feather-theme/lib/bridge.lua',
     'config/client.lua',
     'client/feather.lua',
     'client/nui.lua',
@@ -40,6 +41,7 @@ dependencies {
     '/onesync',
     'feather-mysql',
     'feather-core',
+    'feather-theme',
     'feather-character',
     'feather-inventory',
     'feather-jobs',

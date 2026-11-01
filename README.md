@@ -192,3 +192,14 @@ Target registry. It verifies bounded session reads, transient errors/logout, the
 first half-second staying open, target dispatch, cleanup before despawn, stale
 callbacks, streaming return, Target restart and NPC-free zones. In-game acceptance
 of this correction remains to be confirmed. Restart only h4nr-craft to deploy.
+
+### Shared styling (1.1.2)
+
+The dedicated crafting layout uses `feather-theme` 0.2.0+ for the live palette,
+player accent, Barlow body font, Chakra Petch headings, HUD corners and chamfered
+primary actions, matching the Inventory/Menu v2 Neon Vice family. Theme bridge,
+script and shared token stylesheet are required; no Menu v2 dependency is added.
+Update Theme and Craft together. For the first deployment, run `restart
+feather-theme` (or `ensure feather-theme` if stopped) before `restart h4nr-craft`.
+Browser regression covers shared font loading, Romanian text, dynamic accent,
+selection/progress/surface updates and contrast for light player accents.
