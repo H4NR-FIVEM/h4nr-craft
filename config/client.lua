@@ -1,6 +1,6 @@
--- GTA controls and presentation. Toolkit owns the prompt and ambient NPCs.
-Config.InteractControl = 38 -- INPUT_PICKUP (E), a GTA V control index.
-Config.PromptDistance = 2.0 -- metres
+-- Feather Target interactions and Toolkit-owned ambient NPCs.
+Config.InteractDistance = 2.0 -- metres from the player to the target
+Config.MenuCloseDistance = 3.5 -- metres from the station; server admission is independently checked
 Config.SpawnDistance = 65.0 -- metres; NPCs stream near each station.
 Config.ShowBlips = true
 Config.ShowNpcs = true

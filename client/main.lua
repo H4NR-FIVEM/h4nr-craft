@@ -1,14 +1,6 @@
--- GTA ambient stations, streamed NPCs and Toolkit E prompts; cleanup owns every handle.
-local U = Craft.Ui
-local blips, peds = {}, {}
-local prompt
-local GROUP_ID = 48541
+-- Station startup, UI monitoring and frame-local input ownership. NPC interaction belongs to Feather Target.
+local blips = {}
 CreateThread(function()
-    local result =
-        U.Toolkit('CreatePrompt', { control = Config.InteractControl, label = _U('open'), groupId = GROUP_ID })
-    if result and result.ok then
-        prompt = result.value.id
-    end
     if Config.ShowBlips then
         for _, location in ipairs(Config.Locations) do
             local blip = AddBlipForCoord(location.Coords.x, location.Coords.y, location.Coords.z)
@@ -23,64 +15,27 @@ CreateThread(function()
         end
     end
     while true do
-        local sleep = 750
-        local coords = GetEntityCoords(PlayerPedId())
-        if Craft.Board.Active() then
-            sleep = 0 -- NUI ownership and gameplay suppression must be renewed each rendered frame.
-            DisableAllControlActions(0)
-            DisableAllControlActions(1)
-            DisableAllControlActions(2)
-            DisablePlayerFiring(PlayerId(), true)
-        elseif not IsEntityDead(PlayerPedId()) then
-            for _, location in ipairs(Config.Locations) do
-                if #(coords - location.Coords) < Config.PromptDistance then
-                    sleep = 0 -- Toolkit prompt completion is tied to the frame showing this group.
-                    if prompt then
-                        U.Toolkit('ShowPromptGroup', GROUP_ID, location.Label)
-                        local completed = U.Toolkit('IsPromptCompleted', prompt)
-                        if completed and completed.ok and completed.value.completed then
-                            Craft.Menu.Open(location.Id, false)
-                        end
-                    end
-                    break
-                end
-            end
-        end
-        Craft.Menu.Monitor()
-        Wait(sleep)
+        Craft.Stations.Update()
+        Wait(1500)
     end
 end)
 CreateThread(function()
     while true do
-        if Config.ShowNpcs then
-            local coords = GetEntityCoords(PlayerPedId())
-            for _, location in ipairs(Config.Locations) do
-                local near = #(coords - location.Coords) < Config.SpawnDistance
-                if near and not peds[location.Id] then
-                    local result = U.Toolkit('CreatePed', {
-                        model = location.Model,
-                        x = location.Coords.x,
-                        y = location.Coords.y,
-                        z = location.Coords.z - 1.0,
-                        heading = location.Heading,
-                        networked = false,
-                        timeoutMs = 3000,
-                    })
-                    if result and result.ok then
-                        local ped = result.value.entity
-                        SetEntityInvincible(ped, true)
-                        FreezeEntityPosition(ped, true)
-                        SetBlockingOfNonTemporaryEvents(ped, true)
-                        TaskStartScenarioInPlace(ped, 'WORLD_HUMAN_CLIPBOARD', 0, true)
-                        peds[location.Id] = result.value.id
-                    end
-                elseif not near and peds[location.Id] then
-                    U.Toolkit('RemoveEntity', peds[location.Id])
-                    peds[location.Id] = nil
-                end
-            end
+        Craft.Menu.Monitor()
+        Wait(250)
+    end
+end)
+CreateThread(function()
+    while true do
+        local sleep = 250
+        if Craft.Board.Active() then
+            sleep = 0 -- UI input suppression cannot wait on a session RPC or NPC model loading.
+            DisableAllControlActions(0)
+            DisableAllControlActions(1)
+            DisableAllControlActions(2)
+            DisablePlayerFiring(PlayerId(), true)
         end
-        Wait(1500)
+        Wait(sleep)
     end
 end)
 RegisterNetEvent('h4nr-craft:client:book', function(id)
@@ -88,21 +43,27 @@ RegisterNetEvent('h4nr-craft:client:book', function(id)
         Craft.Menu.Open(id, true)
     end
 end)
-AddEventHandler('onResourceStop', function(resource)
-    if resource == 'feather-core' then
+AddEventHandler('onClientResourceStart', function(resource)
+    if resource == 'feather-target' then
+        Craft.Stations.TargetStopped()
+    end
+end)
+local function stopped(resource)
+    if resource == 'feather-core' or resource == 'feather-target' then
         Craft.Menu.Close()
+    end
+    if resource == 'feather-target' then
+        Craft.Stations.TargetStopped()
     end
     if resource ~= GetCurrentResourceName() then
         return
     end
     Craft.Menu.Close()
+    Craft.Stations.Cleanup()
     for _, blip in ipairs(blips) do
         RemoveBlip(blip)
     end
-    for _, id in pairs(peds) do
-        U.Toolkit('RemoveEntity', id)
-    end
-    if prompt then
-        U.Toolkit('RemovePrompt', prompt)
-    end
-end)
+    blips = {}
+end
+AddEventHandler('onResourceStop', stopped)
+AddEventHandler('onClientResourceStop', stopped)

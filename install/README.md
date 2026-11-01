@@ -19,6 +19,7 @@ ensure feather-core
 ensure feather-character
 ensure feather-notify
 ensure feather-toolkit
+ensure feather-target
 ensure feather-inventory
 ensure feather-weapons
 ensure feather-organizations
@@ -61,3 +62,7 @@ Books are offered free at each bench by default. Advanced recipes require their
 configured book, and weapons/ammunition/refining require a fixed workshop. Only
 explicitly portable recipes can be made in the field. Existing orders without
 the new Portable snapshot flag remain collectible at a bench.
+
+Version 1.1.1 adds feather-target as a dependency. Hold ALT, aim at the station
+NPC, left-click and select Deschide atelierul. No E prompt is used. Restart only
+h4nr-craft after deploying; Feather Core and Inventory do not need restarting.

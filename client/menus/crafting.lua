@@ -211,7 +211,7 @@ function M.Monitor()
     if
         not current()
         or IsEntityDead(PlayerPedId())
-        or (not portable and #(GetEntityCoords(PlayerPedId()) - location.Coords) > Config.PromptDistance + 1.5)
+        or (not portable and #(GetEntityCoords(PlayerPedId()) - location.Coords) > Config.MenuCloseDistance)
     then
         M.Close()
         return

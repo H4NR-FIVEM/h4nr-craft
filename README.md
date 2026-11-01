@@ -19,7 +19,7 @@ Inventory's additive item bootstrap and narrow caller permissions, Jobs reader
 trust, and Weapons' FiveM issuer permission. This resource never creates or
 queries another resource's tables.
 
-Walk to a station and press **E**. Select a recipe and number of batches, then
+Hold **ALT**, aim at the station NPC, left-click and select **Deschide atelierul**. Select a recipe and number of batches, then
 start crafting. The server begins the timer after material preparation succeeds.
 The right panel shows queued orders with live countdowns and Collect/Resume
 actions. Quantity controls update output, materials, duration and XP immediately.
@@ -28,7 +28,7 @@ Search and expandable categories filter the left recipe list. A full inventory l
 ## Configuration
 
 - `config/shared.lua`: language, locations, books and portable access.
-- `config/client.lua`: GTA control index, blips, NPC streaming distance.
+- `config/client.lua`: target reach, menu close distance, blips and NPC streaming distance.
 - `config/recipes_*.lua`: stable recipe IDs, outputs, XP, materials, tools and jobs.
 - `config/server.lua`: distance, batch/queue limits, duty, collection and levels.
 
@@ -98,8 +98,8 @@ python3 tests/run.py
 python3 tests/mysql_integration.py
 ```
 
-Lua 5.4 verification: **30 files parse, 335 service assertions, 40 NUI/controller
-assertions and 44 actual Core RPC assertions pass**. The browser suite passes
+Lua 5.4 verification: **32 files parse, 335 service assertions, 40 NUI/controller
+assertions, 44 actual Core RPC assertions and 123 interaction assertions pass**. The browser suite passes
 **31 checks** using a synthetic payload emitted by the actual Lua controller.
 It covers layout, search, selection, quantity/material/time totals, scoped actions,
 selection preservation, countdowns, blocking reasons, images, 720p/narrow layouts
@@ -168,3 +168,27 @@ are our adaptation, not the original upstream balance.
 records the ox/QB/Jim references, exact installed coordinates, and candidate foundry,
 gem-cutting and jewelry locations. Mining/smelting is retained with h4nr-mining.
 New item/weapon mechanics are not enabled just because a third-party recipe names them.
+
+## 1.1.1 — NPC targeting and menu lifetime
+
+Stations now use feather-target: hold ALT, aim at the NPC, left-click and choose
+Deschide atelierul. NPC-free mode uses a station sphere target; there is no E
+prompt. Options are removed before NPC deletion and reattached after Target
+restart. feather-target is a declared dependency.
+
+The Core client GetSessionContext export makes a server RPC. Calling it from
+every UI monitoring frame exhausted its route limit and closed the menu as if
+the character had logged out. Craft now samples presentation context at most
+once per second and gives transient transport/throttle errors a maximum
+three-second grace from the last successful read. Explicit logout, character
+switch and Core stop still close the interface. This is only a display snapshot:
+all server crafting routes retain authoritative session checks on each action.
+Frame-local input suppression runs separately from monitoring/model-loading,
+so it never waits on a network read. NUI focus disables KeepInput and releases
+only focus held by Craft.
+
+The interaction suite loads the actual Craft boundary/controller and Feather
+Target registry. It verifies bounded session reads, transient errors/logout, the
+first half-second staying open, target dispatch, cleanup before despawn, stale
+callbacks, streaming return, Target restart and NPC-free zones. In-game acceptance
+of this correction remains to be confirmed. Restart only h4nr-craft to deploy.

@@ -34,8 +34,11 @@ function B.Active()
     return active
 end
 function B.Close()
+    local ownedFocus = active
     active, nonce, actions = false, nil, nil
-    U.Focus(false)
+    if ownedFocus then
+        U.Focus(false)
+    end
     U.Send({ action = 'close' })
 end
 function B.Update(view, retained)
