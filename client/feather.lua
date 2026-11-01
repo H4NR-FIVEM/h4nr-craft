@@ -8,7 +8,7 @@ function U.Session()
     return result and result.ok and result.value or nil
 end
 function U.Rpc(action, params)
-    local result = exports['feather-core']:CallRPCAsync('h4nr-craft:' .. action, params, nil, 30000)
+    local result = exports['feather-core']:CallRPCAsync(Craft.Route(action), params, nil, 30000)
     return type(result) == 'table' and result or Craft.Err('pending')
 end
 function U.Notify(key)

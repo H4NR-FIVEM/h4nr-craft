@@ -47,7 +47,17 @@ for action, handler in pairs(handlers) do
 end
 function Craft.RegisterRoutes()
     for action, handler in pairs(Craft.Routes) do
-        local result = Craft.Feather.RegisterRpc('h4nr-craft:' .. action, handler)
-        assert(result and result.ok, 'Could not register crafting route ' .. action)
+        local name = Craft.Route(action)
+        local result = Craft.Feather.RegisterRpc(name, handler)
+        if type(result) ~= 'table' or not result.ok then
+            local failure = type(result) == 'table' and result or {}
+            error(
+                ('Could not register crafting route %s: %s (%s)'):format(
+                    name,
+                    tostring(failure.code or 'invalid_result'),
+                    tostring(failure.message or 'No error details')
+                )
+            )
+        end
     end
 end

@@ -95,8 +95,10 @@ python3 tests/run.py
 python3 tests/mysql_integration.py
 ```
 
-Lua 5.4 syntax and simulated service/client contracts: **26 files (including three companion configs), 203 service
-assertions and 111 client assertions** at the initial verification checkpoint.
+Lua 5.4 syntax and simulated service/client contracts: **27 files (including three companion configs), 203 service
+assertions and 111 client assertions**. The RPC regression suite additionally passes
+**44 assertions** using the actual Feather Core registration and dispatch code,
+including all four versioned routes, error responses and resource-stop cleanup.
 The isolated MariaDB installer/queue suite passes **99 checks**, preserves
 existing definitions, rejects duplicate request identities, and tests retained
 server deadlines and collected XP. It starts and stops its own temporary database;
@@ -110,3 +112,10 @@ placement/E prompts, menu Escape/controller focus, NPC streaming, portable books
 material and output rendering, broken tools, job/duty restrictions, GTA weapon
 equip/ammo refill, reconnect/restart recovery and competing players. No live
 Inventory restart or gameplay acceptance was performed during this port.
+
+## 1.0.1 — RPC startup correction
+
+Contract RPC names now use a shared `.v1` suffix on both client and server.
+Craft error responses include the localized `message` required by Core's result
+contract. Registration failures report Core's error code and message. Deploy
+both sides together with `restart h4nr-craft`; no Inventory restart is needed.

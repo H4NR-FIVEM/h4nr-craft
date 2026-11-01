@@ -3,8 +3,11 @@ Craft = { Recipes = {}, Locales = Locales or {} }
 function Craft.Ok(value)
     return { ok = true, value = value }
 end
-function Craft.Err(code)
-    return { ok = false, code = code }
+function Craft.Err(code, message)
+    return { ok = false, code = code, message = message or _U(code) }
+end
+function Craft.Route(action)
+    return 'h4nr-craft:' .. action .. '.v1'
 end
 function Craft.Integer(value, low, high)
     return type(value) == 'number' and value == value and value % 1 == 0 and value >= low and value <= high
