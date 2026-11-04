@@ -8,8 +8,8 @@ Config = {
         {
             Id = 'food',
             Label = 'Bucătărie',
-            Coords = vector3(-1195.2, -893.8, 14.0),
-            Heading = 305.0,
+            Coords = vector3(-580.684, -889.246, 26.002),
+            Heading = 274.555,
             Sprite = 52,
             Color = 3,
             Model = 's_m_y_chef_01',
